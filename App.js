@@ -65,7 +65,7 @@ Ext.define('CustomApp', {
     	Ext.Array.each(data, function(record){
     		load = record.get('Load');
     		iteration = record.get('Iteration')._refObjectName;
-    		if (load > 1 && iteration == 'I-4-2015'){
+    		if (load > 1 /*&& iteration == 'I-4-2015'*/){
     			records.push({
     				User: record.get('User')._refObjectName,
     				Capacity: record.get('Capacity'),
@@ -94,7 +94,21 @@ Ext.define('CustomApp', {
 	        	   text: 'User', dataIndex: 'User'
 	           },
 	           {
-	        	   text: 'Load', dataIndex: 'Load'
+	        	   text: 'Load', //dataIndex: 'Load',
+	        	   xtype: 'templatecolumn',
+	        	   tpl: Ext.create('Rally.ui.renderer.template.progressbar.ProgressBarTemplate', {
+						percentDoneName: 'Load',
+						calculateColorFn: function(recordData) {
+							if (recordData.Load < 0.8) {
+								colVal = "#B2E3B6"; // Green
+							} else if (recordData.Load < 1.0) {
+								colVal = "#FBDE98"; // Orange
+							} else {
+								colVal = "#FCB5B1"; // Red
+							}
+						return colVal;
+						}
+					})
 	           },
 	           {
 	        	   text: 'Capacity', dataIndex: 'Capacity'

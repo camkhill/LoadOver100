@@ -74,7 +74,7 @@
     	Ext.Array.each(data, function(record){
     		load = record.get('Load');
     		iteration = record.get('Iteration')._refObjectName;
-    		if (load > 1 && iteration == 'I-4-2015'){
+    		if (load > 1 /*&& iteration == 'I-4-2015'*/){
     			records.push({
     				User: record.get('User')._refObjectName,
     				Capacity: record.get('Capacity'),
