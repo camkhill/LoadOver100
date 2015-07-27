@@ -2,22 +2,35 @@ Ext.define('CustomApp', {
     extend: 'Rally.app.TimeboxScopedApp',
     scopeType: 'iteration',
     
+    //Define what to do when iteration is changed
     onScopeChange: function(scope){
-    	
+    	this._loadData();
     },
     
     
     componentCls: 'app',
     launch: function() {
     	
-    	console.log('about to load');
+    	//Try switch used for debugging
+    	//var iterationID = '/iteration/33678599188';
+    	try {
+    		var iterationID = this.getContext().getTimeboxScope().getRecord().get("_ref");
+    	} catch(err) {
+    		var iterationID = '/iteration/33678599188';
+    	}
     	
-    	//Ext.create('Rally.data.WsapiDataStore',{
-    	Ext.create('Rally.data.wsapi.Store',{
+    	console.log('Iteration ID',iterationID);
+    	
+    	//Create a data store for User Iteration Capacity records
+    	Ext.create('Rally.data.WsapiDataStore',{
     		model: 'User Iteration Capacity',
+    		limit: 'Infinity',
+    		pageSize: 200,
+    		filters: [{property: 'Iteration', operator: '=', value: iterationID}],
     		fetch: ['User', 'Capacity', 'TaskEstimates', 'Load', 'Project','Iteration'],
     		autoLoad: true,
     		listeners: {
+    			//TODO if doesn't exist, _loadData()
     			load: this._loadData,
     			scope: this
     		}
@@ -26,46 +39,31 @@ Ext.define('CustomApp', {
     	
     },
     
-    /*_createGrid: function(myStore){
-    	
-    	
-    	this.myGrid = Ext.create(Rally.ui.grid.Grid, {
-    		store: myStore,
-    		columnCfgs: ['User', 'Capacity', 'TaskEstimates','Load','Project','Iteration']
-    		
-    	});
-    	
-    	console.log('Adding Grid...');
-    	this.add(this.myGrid);
-    	
-    },*/	
     
     
     _loadData: function(store, data){
     	
-    	var records = [];
-    	var iterationID;
-    	//var IterationID = this.getContext().getTimeboxScope().getRecord().get("ObjectID");
+    	var records = []; //Empty array to push data to
+    	
+    	
+    	/* DEBUG -- select here if we get iteration from combobox build in app, or passed by the page */
+    	//var iterationID = this.getContext().getTimeboxScope().getRecord().data.Name; //Get iteration set at the higher app level
+    	//var iterationID = 'I-6-2015';
+    	
+    	
     	var capacity;
     	var taskEstimate;
     	var load;
-    	var recordCounter = 0;
-    	console.log('Record Counter',recordCounter);
+    	var recordCounter = 0; //DEBUG
+    	console.log('Record Counter',recordCounter); //DEBUG
     	
-    	console.log('Iteration ID',iterationID);
-    	
-    	/*myFilters = [
-            {
-            	property: 'Capacity',
-            	operator: '>=',
-            	value: 1
-            }
-        ];*/
-    	
+        // Create an array of only record where load is over 100% for the iteration
     	Ext.Array.each(data, function(record){
+    		
     		load = record.get('Load');
     		iteration = record.get('Iteration')._refObjectName;
-    		if (load > 1 /*&& iteration == 'I-4-2015'*/){
+    		
+    		if (load > 1 /*&& iteration === iterationID*/){
     			records.push({
     				User: record.get('User')._refObjectName,
     				Capacity: record.get('Capacity'),
@@ -75,19 +73,19 @@ Ext.define('CustomApp', {
     				Iteration: record.get('Iteration')._refObjectName
     				
     			});
-    			var username = record.get('Iteration');
-    			console.log('User',username);
+    			recordCounter++;
+    			console.log('Record Counter',recordCounter);
+    			//TODO This returns 25 max
     			
     		};
-    		recordCounter++;
-    		console.log('Record Counter',recordCounter);
+    		
     	});
     	
     	this.add({
     		xtype: 'rallygrid',
     		store: Ext.create('Rally.data.custom.Store',{
     			data: records,
-    			//filters: [{property: 'Iteration', operator: '=', value: 'I-3-2015'}]
+    			//filters: [{property: 'Iteration', operator: '=', value: iterationID}]
     		}),
     		columnCfgs: [
 	           {
@@ -111,13 +109,18 @@ Ext.define('CustomApp', {
 					})
 	           },
 	           {
-	        	   text: 'Capacity', dataIndex: 'Capacity'
+	        	   text:'Task Estimates', 
+	        	   dataIndex: 'TaskEstimate', 
+	        	   align: 'center'
+    		   },
+	           {
+	        	   text: 'Capacity',
+	        	   dataIndex: 'Capacity',
+	        	   align: 'center'
 	           },
 	           {
-	        	   text: 'Project', dataIndex: 'Project'
-	           },
-	           {
-	        	   text: 'Iteration', dataIndex: 'Iteration'
+	        	   text: 'Project',
+	        	   dataIndex: 'Project'
 	           }
            ]
     	});
