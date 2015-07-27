@@ -2,6 +2,12 @@ Ext.define('CustomApp', {
     extend: 'Rally.app.TimeboxScopedApp',
     scopeType: 'iteration',
     
+    // TODO Fix the layout
+    /*layout: {
+    	type: 'fit',
+    	align: 'stretch'
+    },*/
+    
     //Define what to do when iteration is changed
     onScopeChange: function(scope){
     	this._loadData();
@@ -39,6 +45,11 @@ Ext.define('CustomApp', {
     	
     },
     
+    
+    _buildGrid: function() {
+    	
+    	
+    },
     
     
     _loadData: function(store, data){
@@ -87,6 +98,13 @@ Ext.define('CustomApp', {
     			data: records,
     			//filters: [{property: 'Iteration', operator: '=', value: iterationID}]
     		}),
+    		
+    		//Unclear if this layout does anything...need to fix
+    		layout: {
+    			type: 'fit',
+    			align: 'stretch'
+    		},
+    		
     		columnCfgs: [
 	           {
 	        	   text: 'User', dataIndex: 'User'
