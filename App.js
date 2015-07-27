@@ -1,6 +1,7 @@
 Ext.define('CustomApp', {
     extend: 'Rally.app.TimeboxScopedApp',
     scopeType: 'iteration',
+    componentCls: 'app',
     
     // TODO Fix the layout
     /*layout: {
@@ -10,25 +11,32 @@ Ext.define('CustomApp', {
     
     //Define what to do when iteration is changed
     onScopeChange: function(scope){
-    	this._loadData();
+    	
+    	newIteration = this._getIteration();
+    	console.log('Got new iteration ID',newIteration);
+    	
+    	newStore = this._getFullStore(newIteration);
+    	console.log('Got full store (unfiltered)',newStore);
+    	
+    	
+    	records = this._createCustomStore(newStore);
+    	console.log('Built custom store with filtered data',records);
+    	
+    	
+    	
+    	this._loadGrid(records);
+    	
+
     },
     
     
-    componentCls: 'app',
-    launch: function() {
-    	
-    	//Try switch used for debugging
-    	//var iterationID = '/iteration/33678599188';
-    	try {
-    		var iterationID = this.getContext().getTimeboxScope().getRecord().get("_ref");
-    	} catch(err) {
-    		var iterationID = '/iteration/33678599188';
-    	}
+    
+    _getFullStore: function(iterationID) {
     	
     	console.log('Iteration ID',iterationID);
     	
     	//Create a data store for User Iteration Capacity records
-    	Ext.create('Rally.data.WsapiDataStore',{
+    	this.fullStore = Ext.create('Rally.data.WsapiDataStore',{
     		model: 'User Iteration Capacity',
     		limit: 'Infinity',
     		pageSize: 200,
@@ -36,32 +44,19 @@ Ext.define('CustomApp', {
     		fetch: ['User', 'Capacity', 'TaskEstimates', 'Load', 'Project','Iteration'],
     		autoLoad: true,
     		listeners: {
-    			//TODO if doesn't exist, _loadData()
-    			load: this._loadData,
-    			scope: this
+    			
     		}
     		
     	});
-    	
+    	return this.fullStore;
     },
     
     
-    _buildGrid: function() {
-    	
-    	
-    },
     
-    
-    _loadData: function(store, data){
+    _createCustomStore: function(fullStore){
     	
+    	//var record = fullStore.getRecords
     	var records = []; //Empty array to push data to
-    	
-    	
-    	/* DEBUG -- select here if we get iteration from combobox build in app, or passed by the page */
-    	//var iterationID = this.getContext().getTimeboxScope().getRecord().data.Name; //Get iteration set at the higher app level
-    	//var iterationID = 'I-6-2015';
-    	
-    	
     	var capacity;
     	var taskEstimate;
     	var load;
@@ -69,12 +64,12 @@ Ext.define('CustomApp', {
     	console.log('Record Counter',recordCounter); //DEBUG
     	
         // Create an array of only record where load is over 100% for the iteration
-    	Ext.Array.each(data, function(record){
+    	this.customStore = Ext.Array.each(fullStore.getRecords('Load'), function(record){
     		
     		load = record.get('Load');
     		iteration = record.get('Iteration')._refObjectName;
     		
-    		if (load > 1 /*&& iteration === iterationID*/){
+    		if (load > 1){
     			records.push({
     				User: record.get('User')._refObjectName,
     				Capacity: record.get('Capacity'),
@@ -92,20 +87,49 @@ Ext.define('CustomApp', {
     		
     	});
     	
-    	this.add({
+    	return records;
+    	
+    	/*this.add({
     		xtype: 'rallygrid',
     		store: Ext.create('Rally.data.custom.Store',{
     			data: records,
     			//filters: [{property: 'Iteration', operator: '=', value: iterationID}]
     		}),
     		
-    		//Unclear if this layout does anything...need to fix
+
+    		
+
+    	});*/
+    	
+    	
+    	console.log('Returning records');
+    },
+    
+    
+    
+    
+    
+    
+    _getIteration: function(){
+    	try {
+    		var iterationID = this.getContext().getTimeboxScope().getRecord().get("_ref");
+    	} catch(err) {
+    		var iterationID = '/iteration/33678599188';
+    	}
+    	return iterationID;
+    },
+    
+    _loadGrid: function(myRecords) {
+    	this.myGrid = Ext.create('Rally.ui.grid.Grid', {
+        	store: myRecords,
+    		
+        	//Unclear if this layout does anything...need to fix
     		layout: {
     			type: 'fit',
     			align: 'stretch'
     		},
     		
-    		columnCfgs: [
+        	columnCfgs: [
 	           {
 	        	   text: 'User', dataIndex: 'User'
 	           },
@@ -122,7 +146,7 @@ Ext.define('CustomApp', {
 							} else {
 								colVal = "#FCB5B1"; // Red
 							}
-						return colVal;
+							return colVal;
 						}
 					})
 	           },
@@ -141,23 +165,11 @@ Ext.define('CustomApp', {
 	        	   dataIndex: 'Project'
 	           }
            ]
-    	});
+        });
     	
-    	/*this.myData = Ext.create('Rally.data.wsapi.Store',{
-    		model: 'User Iteration Capacity',
-    		autoLoad: true,
-    		filters: myFilters,
-    		listeners: {
-    			load: function(myStore, myData, success){
-    				this._createGrid(myStore);
-    			},
-    			scope: this
-    		},
-    		
-			fetch: ['User', 'Capacity', 'TaskEstimates', 'Load', 'Project','Iteration']
-    	});*/
-    	console.log('Fetched Data');
+        this.add(this.myGrid); 
     }
+    
     	
     	
 });
