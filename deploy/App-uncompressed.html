@@ -11,22 +11,18 @@
     extend: 'Rally.app.TimeboxScopedApp',
     scopeType: 'iteration',
     
+    // TODO Fix the layout
+    /*layout: {
+    	type: 'fit',
+    	align: 'stretch'
+    },*/
+    
     //Define what to do when iteration is changed
     onScopeChange: function(scope){
-    	this._loadData();
-    },
-    
-    
-    componentCls: 'app',
-    launch: function() {
     	
-    	//Try switch used for debugging
-    	//var iterationID = '/iteration/33678599188';
-    	try {
-    		var iterationID = this.getContext().getTimeboxScope().getRecord().get("_ref");
-    	} catch(err) {
-    		var iterationID = '/iteration/33678599188';
-    	}
+  
+    	var iterationID = this.getContext().getTimeboxScope().getRecord().get("_ref");
+
     	
     	console.log('Iteration ID',iterationID);
     	
@@ -40,14 +36,25 @@
     		autoLoad: true,
     		listeners: {
     			//TODO if doesn't exist, _loadData()
-    			load: this._loadData,
+    			load: function(myStore, myData, success) {
+    				
+    					this._loadData(myStore,myData);
+    				
+    				
+    			}, 
+    				
+    				//this._loadData,
     			scope: this
     		}
     		
     	});
     	
+    	
     },
     
+    
+    componentCls: 'app',
+
     
     
     _loadData: function(store, data){
@@ -90,63 +97,121 @@
     		
     	});
     	
-    	this.add({
-    		xtype: 'rallygrid',
-    		store: Ext.create('Rally.data.custom.Store',{
-    			data: records,
-    			//filters: [{property: 'Iteration', operator: '=', value: iterationID}]
-    		}),
-    		columnCfgs: [
-	           {
-	        	   text: 'User', dataIndex: 'User'
-	           },
-	           {
-	        	   text: 'Load', //dataIndex: 'Load',
-	        	   xtype: 'templatecolumn',
-	        	   tpl: Ext.create('Rally.ui.renderer.template.progressbar.ProgressBarTemplate', {
-						percentDoneName: 'Load',
-						calculateColorFn: function(recordData) {
-							if (recordData.Load < 0.8) {
-								colVal = "#B2E3B6"; // Green
-							} else if (recordData.Load < 1.0) {
-								colVal = "#FBDE98"; // Orange
-							} else {
-								colVal = "#FCB5B1"; // Red
-							}
-						return colVal;
-						}
-					})
-	           },
-	           {
-	        	   text:'Task Estimates', 
-	        	   dataIndex: 'TaskEstimate', 
-	        	   align: 'center'
-    		   },
-	           {
-	        	   text: 'Capacity',
-	        	   dataIndex: 'Capacity',
-	        	   align: 'center'
-	           },
-	           {
-	        	   text: 'Project',
-	        	   dataIndex: 'Project'
-	           }
-           ]
-    	});
+    	this.myCustomStore = Ext.create('Rally.data.custom.Store',{
+    		data: records
+    	})
     	
-    	/*this.myData = Ext.create('Rally.data.wsapi.Store',{
-    		model: 'User Iteration Capacity',
-    		autoLoad: true,
-    		filters: myFilters,
-    		listeners: {
-    			load: function(myStore, myData, success){
-    				this._createGrid(myStore);
-    			},
-    			scope: this
-    		},
+    	    	
+    	if(!this.myGrid) {
+    	this.myGrid = Ext.create(Rally.ui.grid.Grid,{
+        		store: this.myCustomStore,
+        		
+        		//Unclear if this layout does anything...need to fix
+        		layout: {
+    				type: 'fit',
+    				align: 'stretch'
+        		},
+        		
+    			columnCfgs: [
+    			            {
+    	        	   text: 'User', dataIndex: 'User'
+    	           },
+    	           {
+    	        	   text: 'Load', //dataIndex: 'Load',
+    	        	   xtype: 'templatecolumn',
+    	        	   tpl: Ext.create('Rally.ui.renderer.template.progressbar.ProgressBarTemplate', {
+    						percentDoneName: 'Load',
+    						calculateColorFn: function(recordData) {
+    							if (recordData.Load < 0.8) {
+    								colVal = "#B2E3B6"; // Green
+    							} else if (recordData.Load < 1.0) {
+    								colVal = "#FBDE98"; // Orange
+    							} else {
+    								colVal = "#FCB5B1"; // Red
+    							}
+    						return colVal;
+    						}
+    					})
+    	           },
+    	           {
+    	        	   text:'Task Estimates', 
+    	        	   dataIndex: 'TaskEstimate', 
+    	        	   align: 'center'
+        		   },
+    	           {
+    	        	   text: 'Capacity',
+    	        	   dataIndex: 'Capacity',
+    	        	   align: 'center'
+    	           },
+    	           {
+    	        	   text: 'Project',
+    	        	   dataIndex: 'Project'
+    	           }
+               ]
+        		
+        	});
+    	
+    		console.log('grid store',this.myGrid.store);
     		
-			fetch: ['User', 'Capacity', 'TaskEstimates', 'Load', 'Project','Iteration']
-    	});*/
+    		this.add(this.myGrid);
+    	} else {
+    		this.myGrid.destroy();
+    		console.log('grid store',this.myGrid.store);
+    		this.myGrid = Ext.create(Rally.ui.grid.Grid,{
+        		store: this.myCustomStore,
+        		
+        		//Unclear if this layout does anything...need to fix
+        		layout: {
+    				type: 'fit',
+    				align: 'stretch'
+        		},
+        		
+    			columnCfgs: [
+    			            {
+    	        	   text: 'User', dataIndex: 'User'
+    	           },
+    	           {
+    	        	   text: 'Load', //dataIndex: 'Load',
+    	        	   xtype: 'templatecolumn',
+    	        	   tpl: Ext.create('Rally.ui.renderer.template.progressbar.ProgressBarTemplate', {
+    						percentDoneName: 'Load',
+    						calculateColorFn: function(recordData) {
+    							if (recordData.Load < 0.8) {
+    								colVal = "#B2E3B6"; // Green
+    							} else if (recordData.Load < 1.0) {
+    								colVal = "#FBDE98"; // Orange
+    							} else {
+    								colVal = "#FCB5B1"; // Red
+    							}
+    						return colVal;
+    						}
+    					})
+    	           },
+    	           {
+    	        	   text:'Task Estimates', 
+    	        	   dataIndex: 'TaskEstimate', 
+    	        	   align: 'center'
+        		   },
+    	           {
+    	        	   text: 'Capacity',
+    	        	   dataIndex: 'Capacity',
+    	        	   align: 'center'
+    	           },
+    	           {
+    	        	   text: 'Project',
+    	        	   dataIndex: 'Project'
+    	           }
+               ]
+        		
+        	});
+    	
+    		    		
+    		this.add(this.myGrid);
+
+    		
+    	}	
+    	
+    	
     	console.log('Fetched Data');
     }
     	
